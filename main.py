@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -6,28 +8,28 @@ import time
 
 print("Randevu alma modülüne hoşgeldiniz.")
 
-isim="HARUN"
-soyisim="...."
-tc="585...."
-dt_gun=".."
-dt_ay=".."
-dt_yil="...."
-tel="546..."
+load_dotenv()
+isim = os.getenv("isim")
+soyisim = os.getenv("soyisim")
+tc = os.getenv("tc")
+dt_gun = os.getenv("dt_gun")
+dt_ay = os.getenv("dt_ay")
+dt_yil = os.getenv("dt_yil")
+tel = os.getenv("tel")
 
 # --------Driver Kurulumu--------
-
 chrome_options = Options()
 chrome_options.add_experimental_option("detach", True)
 driver = webdriver.Chrome(options=chrome_options, service=Service(ChromeDriverManager().install()))
 driver.get("https://randevu.nvi.gov.tr/")
 
 
-# --------Web sitesi içindeki xpath ler (baş)--------
-
+# --------------------------Web sitesi içindeki xpath ler (baş)--------------------------
 # Açılış Sayfası
 pasaport_path = '/html/body/div[1]/div[1]/div/div/div[2]/form/div/a[3]/div/div/div/p'
 kabul_ediyorum_path = '/html/body/div[2]/div[2]/div/div/div/div/div/div/div/div[4]/button[1]'
-bordo_pasaport_path = '/html/body/div[1]/div[1]/div/div/div/form/div[1]/div/div/div/div/div[1]/div/button'
+bordo_pasaport_button_path = '/html/body/div[1]/div[1]/div/div/div/form/div[1]/div/div/div/div/div[1]/div/button'
+bordo_pasaport_isim_path = '/html/body/div[1]/div[1]/div/div/div/form/div[1]/div/div/div/div/div[1]/div/h4'
 
 # Bilgi Giriş Sayfası
 isim_path = '/html/body/div[1]/div[1]/div/div/div/form/div[2]/div[1]/div[1]/div/input'
@@ -40,23 +42,32 @@ tel_path = '/html/body/div[1]/div[1]/div/div/div/form/div[2]/div[1]/div[5]/div/i
 
 # step2 (İl İlçe Seçim) Sayfası
 istanbul_path = '/html/body/div[1]/form/section/div/div[2]/div[3]/div/div/a[2]/span'
-il_path =       '/html/body/div[1]/form/section/div/div[2]/div[3]/div/div/a[2]/span'
+il_path = '/html/body/div[1]/form/section/div/div[2]/div[3]/div/div/a[2]/span' # a[x] il indeksi
+bos_randevu_butonu_path = '/html/body/div[1]/form/section/div/div[2]/div[5]/div/div/a[{0}]/div/div/label'
+en_erken_rand_tarihi_path = '/html/body/div[1]/form/section/div/div[2]/div[5]/div/div/a[{0}]/div/span'
+step_2_ileri_button_path = '/html/body/div[1]/form/section/div/div[3]/div/div[2]/button'
 
-# step3 () Sayfası
+# step3 (Kişi Seçim) Sayfası
+ilk_kisi_ekleme_path = '/html/body/div[1]/form/section/div/div[2]/div[3]/div/div/a[1]/div/i'
+step_3_ileri_button_path = '/html/body/div[1]/form/section/div/div[3]/div/span[2]/button'
 
-# --------Web sitesi içindeki xpath ler (son)--------
+# step4 (Randevu Seçim) Sayfası
+randevu_saati_path = '/html/body/div[1]/form/section/div[1]/div[2]/div[3]/div[1]/div[2]/div[2]/div/div[1]/div'
+kisi_secimi_path = '/html/body/div[1]/form/section/div[1]/div[2]/div[3]/div[1]/div[1]/div/a/div/div/label'
+step_4_ileri_button_path = '/html/body/div[1]/form/section/div[1]/div[2]/div[3]/div[2]/div/div[2]/button'
+# --------------------------Web sitesi içindeki xpath ler (son)--------------------------
 
 
 # --------Driver İşlemleri--------
-
-# İlk Tıklamalar
+# Login Ekranının Açılması
 driver.find_element("xpath", pasaport_path).click()
-time.sleep(1)
+time.sleep(0.5)
 driver.find_element("xpath", kabul_ediyorum_path).click()
 time.sleep(2)
-driver.find_element("xpath", bordo_pasaport_path).click()
-time.sleep(1)
-print("Bordo pasaport seçildi!")
+driver.find_element("xpath", bordo_pasaport_button_path).click()
+time.sleep(0.5)
+bordo_pasaport_isim = "".join(driver.find_element("xpath", bordo_pasaport_isim_path).text.splitlines())
+print(bordo_pasaport_isim, "seçildi!")
 
 # Bilgilerin Doldurulması
 driver.find_element("xpath", isim_path).send_keys(isim)
@@ -79,73 +90,75 @@ print("Güvenlik kodu girildi, işleme devam ediliyor...")
 # Seçilen İlin Belirlenen İlçelerinde Boşluk Kontrolü
 ilce_listesi = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
                 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]
-tarih_listesi = ["26.12.2022"]
+tarih_listesi = ["27.12.2022", "28.12.2022", "29.12.2022", "30.12.2022", "31.12.2022", "02.01.2023", "03.01.2023", "04.01.2023", "05.01.2023"]
 yenileme_sayisi = 0
 
 sonuc = False
 while not sonuc:
     # !!!---Aşağıdaki xpath kullanıcı seçimine göre belirlenecekilek---!!!
     driver.find_element("xpath", il_path).click()
-    time.sleep(1)
+    time.sleep(0.5)
     print("İstenen şehre tıklandı!")
-    hata_sebebi="Seçilen ilçelerde uygun bir randevu bulunamadı!"
+    hata_sebebi = "Seçilen ilçelerde uygun bir randevu bulunamadı!"
 
     for i in ilce_listesi:
         # Boş randevu tarihi varsa try komutu gerçekleşir
         try:
             # İlçede randevu var demek
-            driver.find_element("xpath",'/html/body/div[1]/form/section/div/div[2]/div[5]/div/div/a[{0}]/div/div/label'.format(i))
-            uygun_tarih = driver.find_element("xpath",'/html/body/div[1]/form/section/div/div[2]/div[5]/div/div/a[{0}]/div/span'.format(i)).text
-            print(i, "Numaralı ilçe için en erken randevu tarihi:", uygun_tarih)
+            driver.find_element("xpath", bos_randevu_butonu_path.format(i))
+            en_erken_rand_tarihi = driver.find_element("xpath", en_erken_rand_tarihi_path.format(i)).text
+            print(i, "Numaralı ilçe için en erken randevu tarihi:", en_erken_rand_tarihi)
 
-            if uygun_tarih in tarih_listesi:
-                print(uygun_tarih, "istenen tarihler içerisinde mevcut.")
+            if en_erken_rand_tarihi in tarih_listesi:
+                print(en_erken_rand_tarihi, "istenen tarihler içerisinde mevcut.")
                 # Randevu günü talep edilen gün ile uyuşuyorsa
-                driver.find_element("xpath","/html/body/div[1]/form/section/div/div[2]/div[5]/div/div/a[{0}]/div/div/label".format(i)).click()
+                driver.find_element("xpath", bos_randevu_butonu_path.format(i)).click()
+                time.sleep(0.2)
+                driver.find_element("xpath", step_2_ileri_button_path).click()
                 time.sleep(0.5)
-                driver.find_element("xpath", "/html/body/div[1]/form/section/div/div[3]/div/div[2]/button").click()
-                time.sleep(1)
-                driver.find_element("xpath", "/html/body/div[1]/form/section/div/div[2]/div[3]/div/div/a[1]/div/i").click()
-                time.sleep(1)
-                driver.find_element("xpath", "/html/body/div[1]/form/section/div/div[3]/div/span[2]/button").click()
+                driver.find_element("xpath", ilk_kisi_ekleme_path).click()
+                time.sleep(0.5)
+                driver.find_element("xpath", step_3_ileri_button_path).click()
                 time.sleep(1)
 
                 try:
+                    print("Randevu seçim ekranına geçildi")
                     # Randevu saati hala varsa
-                    #Randevu saati kontrolü:
-                    driver.find_element("xpath","/html/body/div[1]/form/section/div[1]/div[2]/div[3]/div[1]/div[2]/div[2]/div/div/div")
-                    #Randevu saati çekme:
-                    randevu_saati = driver.find_element("xpath","/html/body/div[1]/form/section/div[1]/div[2]/div[3]/div[1]/div[2]/div[2]/div/div/div").text
+                    # Randevu saati kontrolü:
+                    driver.find_element("xpath", randevu_saati_path)
+                    # Randevu saati çekme:
+                    randevu_saati = driver.find_element("xpath", randevu_saati_path).text
                     # Kişi seçimi:
-                    driver.find_element("xpath","/html/body/div[1]/form/section/div[1]/div[2]/div[3]/div[1]/div[1]/div/a/div/div/label").click()
+                    driver.find_element("xpath", kisi_secimi_path).click()
                     time.sleep(0.2)
-                    #Randevu saati seçimi:
-                    driver.find_element("xpath","/html/body/div[1]/form/section/div[1]/div[2]/div[3]/div[1]/div[2]/div[2]/div/div/div").click()
+                    # Randevu saati seçimi:
+                    driver.find_element("xpath", randevu_saati_path).click()
                     print("Randevu saati (", randevu_saati, ") bulundu ve seçildi.")
                     time.sleep(0.5)
                     # !!!---Telefonla doğrulama aşamasına gelmemek için aşağıdaki kod deaktif edilir
-                    #driver.find_element("xpath","/html/body/div[1]/form/section/div[1]/div[2]/div[3]/div[2]/div/div[2]/button").click()
+                    #driver.find_element("xpath", step_4_ileri_button_path).click()
                     sonuc = True
                     break
 
                 except:
                     # Randevu saati kaybolmuşsa
-                    hata_sebebi ="Hata sebebi = Randevu saati seçilemedi, işlemler tekrarlanacak!"
+                    hata_sebebi = "Randevu saati kayboldu, işlemler tekrarlanacak!"
                     driver.get("https://randevu.nvi.gov.tr/default/step2")
                     break
                     # For looptan çıkacak
 
             else:
                 # Randevu günü talep edilen gün ile uyuşmuyorsa
-                print("İlçe", i, "içerisindeki uygun tarih (", uygun_tarih, ") talep edilen tarihler arasında yok!")
+                print("İlçe", i, "içerisindeki uygun tarih (", en_erken_rand_tarihi, ") talep edilen tarihler arasında yok!")
 
 
         except:
             # İlçede randevu yok veya alınamadı demek
             pass
 
-    if sonuc==True:
-        print(uygun_tarih, "tarihindeki saat", randevu_saati, "randevusunu almak için telefonunuza gelen sms onay kodunu girin!")
+    if sonuc == True:
+        print(en_erken_rand_tarihi, "tarihindeki saat", randevu_saati,
+              "randevusunu almak için telefonunuza gelen sms onay kodunu girin!")
         break
 
     else:
