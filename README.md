@@ -8,7 +8,7 @@ Programı kullanmak için py dosyasının çalıştığı dizine .env isimli bir
 Örnek:
 
 isim=HARUN
-soyisim=....
+soyisim=ÖZTÜRK
 tc=585....
 dt_gun=..
 dt_ay=..
