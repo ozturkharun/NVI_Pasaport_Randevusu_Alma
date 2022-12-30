@@ -61,6 +61,10 @@ step_4_ileri_button_path = '/html/body/div[1]/form/section/div[1]/div[2]/div[3]/
 
 # --------------------------Randevu Alma Fonksiyonu--------------------------
 def randevu_alma():
+
+    global yenileme_sayisi
+    yenileme_sayisi = 0
+
     # --------Driver Kurulumu--------
     chrome_options = Options()
     chrome_options.add_experimental_option("detach", True)
@@ -99,7 +103,6 @@ def randevu_alma():
         time.sleep(poll_rate)
     print("Güvenlik kodu girildi, işleme devam ediliyor...")
 
-    yenileme_sayisi = 0
     sonuc = False
     while not sonuc:
         driver.find_element("xpath", il_path).click()
@@ -167,10 +170,13 @@ def randevu_alma():
             print(hata_sebebi, "İşlemler tekrarlanıyor... Yenilenme sayısı:", yenileme_sayisi)
 
 
+max_tekrar_sayilari_listesi = []
 randevu_durumu = False
 while not randevu_durumu:
     try:
         randevu_alma()
         randevu_durumu = True
     except:
+        max_tekrar_sayilari_listesi.append(yenileme_sayisi)
         print("Randevu alma işleminde hata çıktı. Süreç yeniden başlatılıyor...")
+        print("Döngülerdeki maksimum tekrarlar:", max_tekrar_sayilari_listesi_listesi)
